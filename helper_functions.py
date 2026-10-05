@@ -1,7 +1,8 @@
 """Helper functions for HW3"""
-import numpy as np
 from copy import deepcopy
+import numpy as np
 from matplotlib.axes import Axes
+import pprint
 
 
 class Node:
@@ -70,10 +71,45 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
         A root node of the neighbor joining tree.
 
     """
-    
-    self.tree = Node()
+    # q_array = np.empty_like(distances)
+    q_array = np.zeros_like(distances)
+    rows, cols = np.triu_indices(distances.shape[0], k=0)
 
-    raise NotImplementedError()
+    # based on the current dist matrix, calculate Q
+    for i, j in zip(rows, cols):
+        if i == j:
+            q_array[i,j] = 0
+            continue
+
+        # sum(D_ik)
+        d_ik = sum(distances[i, range(0, len(labels))])
+
+        # sum(D_jk)
+        d_jk = sum(distances[j, range(0, len(labels))])
+
+        # Q = (n-2)D_ij - sum(D_ik) - sum(D_jk)
+        q = (len(labels) - 2) * distances[i,j] - d_ik - d_jk
+        q_array[i,j] = q
+
+    q_array = q_array + q_array.T
+
+    # find a pair of distinct nodes i and j, (i != j)
+    # for which Q is smallest
+
+    # Make a new node that joins the nodes i and j
+    # connect the new node to the central node
+
+    # calculate the dist from each of teh node in the pair to this new node
+
+    # calculate the dist from each of the nodes outside of this pair
+    # to the new node
+
+    # repeat with new node and distances until convergance
+
+    print(q_array)
+    # self.tree = Node()
+
+    # raise NotImplementedError()
 
 
 def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
@@ -220,3 +256,30 @@ def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     """
     raise NotImplementedError()
+
+
+if __name__ == "__main__":
+
+    # distances = np.array(
+    #     [
+    #         [0, 14, 14, 12],
+    #         [0, 0, 16, 14],
+    #         [0, 0, 0, 6],
+    #         [0, 0, 0, 0],
+    #     ],
+    #     dtype=float,
+    # )
+    # distances = distances + distances.T
+    distances = np.array(
+            [
+                [0, 1, 4, 4, 2],
+                [0, 0, 5, 5, 3],
+                [0, 0, 0, 4, 3],
+                [0, 0, 0, 0, 2],
+                [0, 0, 0, 0, 0],
+            ],
+            dtype=float,
+        )
+    distances = distances + distances.T
+    print(distances)
+    neighbor_joining(distances, list("ABCDE"))
