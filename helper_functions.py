@@ -2,7 +2,6 @@
 from copy import deepcopy
 import numpy as np
 from matplotlib.axes import Axes
-import pprint
 
 
 class Node:
@@ -71,6 +70,12 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
         A root node of the neighbor joining tree.
 
     """
+    # create nodes for all labels
+    nodes = []
+    for n in labels:
+        nodes.append(Node(n, None, 0, None, 0))
+
+    # initialise q_array
     # q_array = np.empty_like(distances)
     q_array = np.zeros_like(distances)
     rows, cols = np.triu_indices(distances.shape[0], k=0)
@@ -92,23 +97,43 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
         q_array[i,j] = q
 
     q_array = q_array + q_array.T
-
+    
     # find a pair of distinct nodes i and j, (i != j)
     # for which Q is smallest
+    q_copy = q_array.copy()
+    np.fill_diagonal(q_copy, np.inf)
+    min_row, min_col = np.unravel_index(np.argmin(q_copy), q_array.shape)
 
     # Make a new node that joins the nodes i and j
     # connect the new node to the central node
+    new_node_name = f"{labels[min_row]}{labels[min_col]}"
+    
+    # calculate the dist from each of the node in the pair to this new node
+    # delta_iu = 1/2*D_ij + 1/2(n-2)*(sum(D_ik) - sum(D_jk))
+    # sum(D_ik)
+    new_d_ik = sum(distances[min_row, range(0, len(labels))])
 
-    # calculate the dist from each of teh node in the pair to this new node
+    # sum(D_jk)
+    new_d_jk = sum(distances[min_col, range(0, len(labels))])
+    delta_iu = 1/2*distances[min_row,min_col] + 1/(2*(len(labels)-2))*(new_d_ik - new_d_jk)
+    delta_ju = distances[min_row,min_col] - delta_iu
 
+    new_node_left_dist = delta_iu
+    new_node_right_dist = delta_ju
+
+    new_node = Node(new_node_name, nodes[min_row], new_node_left_dist, nodes[min_col], new_node_right_dist)
     # calculate the dist from each of the nodes outside of this pair
     # to the new node
+    # d_uk = 1/2 * (D_ik + D_jk - D_ij)
+    new_labels = [label for i, label in enumerate(labels) if i not in [min_row, min_col]]
+    new_labels.insert(0, new_node_name)
+
+    # calculate new distance matrix
 
     # repeat with new node and distances until convergance
 
-    print(q_array)
-    # self.tree = Node()
 
+    return new_node
     # raise NotImplementedError()
 
 
@@ -281,5 +306,16 @@ if __name__ == "__main__":
             dtype=float,
         )
     distances = distances + distances.T
-    print(distances)
+    # distances = np.array(
+    #         [
+    #             [0, 2, 2],
+    #             [0, 0, 0.5],
+    #             [0, 0, 0],
+    #         ],
+    #         dtype=float,
+    #     )
+    # distances = distances + distances.T
+
+    # neighbor_joining(distances, list("ABCD"))
     neighbor_joining(distances, list("ABCDE"))
+    # neighbor_joining(distances, ["AB","CD","E"])
