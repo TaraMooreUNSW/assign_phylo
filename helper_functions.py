@@ -2,7 +2,6 @@
 from copy import deepcopy
 import numpy as np
 from matplotlib.axes import Axes
-import bisect
 
 class Node:
     def __init__(
@@ -80,10 +79,8 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
 
     # repeat with new node and distances until convergance
     while len(labels_copy) > 2:
-        # print(labels_copy)
         n = len(labels_copy)
         # initialise q_array
-        # q_array = np.empty_like(distances)
         q_array = np.zeros_like(dist_copy)
         rows, cols = np.triu_indices(dist_copy.shape[0], k=0)
 
@@ -129,24 +126,19 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
 
         # create new node & update list of nodes
         new_node = Node(new_node_name, nodes[min_row], new_node_left_dist, nodes[min_col], new_node_right_dist)
-        # labels_copy.remove(labels[min_row])
-        # labels_copy.remove(labels[min_col])
-        # bisect.insort(labels_copy, new_node_name)
 
         # calculate new distance matrix
         new_dist_matrix = np.zeros((n - 1, n - 1))
-        # new_dist_matrix = []
-        # calculate the dist from each of the nodes outside of this pair
-        # to the new node
-        # e.g. d_AB,c = 1/2 * (dist_AC + dist_BC - D_AB)
-        # d_uk = 1/2 * (D_ik + D_jk - D_ij)
+
         label_1_remove = labels_copy[min_row]
         label_2_remove = labels_copy[min_col]
         labels_copy.remove(label_1_remove)
         labels_copy.remove(label_2_remove)
         labels_copy.append(new_node_name)
 
-
+        # calculate the dist from each of the nodes outside of this pair
+        # to the new node
+        # d_uk = 1/2 * (D_ik + D_jk - D_ij)
         remaining_labels = [k for k in range(n) if k != min_row and k != min_col]
 
         for ind_i, og_i in enumerate(remaining_labels):
@@ -162,7 +154,6 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
         nodes = [nodes[k] for k in remaining_labels] + [new_node]
 
         dist_copy = new_dist_matrix
-
 
     if len(nodes) == 2:
         # connect remaining nodes to root node
