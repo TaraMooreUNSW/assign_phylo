@@ -1,7 +1,12 @@
 """Helper functions for HW3"""
 from copy import deepcopy
 import numpy as np
+import matplotlib
+matplotlib.use('WebAgg')
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib.axes import Axes
+
 
 class Node:
     def __init__(
@@ -186,8 +191,71 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     """
 
-    return ax
+    if ax is None:
+        _, ax = plt.subplots(figsize=(8,6))
 
+    node_coords = {}
+    edges = []
+    leaf_nodes = set()
+
+    def recursive_plot_nj_tree(node: Node, x_left, x_right):
+        if node is None:
+            return
+
+        if node == tree:
+            curr_x = abs(1/2 * (x_left + x_right))
+            node_coords[node.name] = (curr_x, 0)
+
+        curr_x, curr_y = node_coords[node.name]
+
+        if node.left is None and node.right is None:
+            leaf_nodes.add(node.name)
+
+        # left tree
+        if node.left:
+            child_x = (x_left + curr_x) * 1/2
+            child_y = curr_y - node.left_distance
+
+            node_coords[node.left.name] = (child_x, child_y)
+            edges.append((node.name, node.left.name, node.left_distance))
+
+            recursive_plot_nj_tree(node.left, x_left, curr_x)
+
+        # right tree
+        if node.right:
+            child_x = (x_right + curr_x) * 1/2
+            child_y = curr_y - node.right_distance
+
+            node_coords[node.right.name] = (child_x, child_y)
+            edges.append((node.name, node.right.name, node.right_distance))
+
+            recursive_plot_nj_tree(node.right, curr_x, x_right)
+
+    recursive_plot_nj_tree(tree, 0, 5)
+
+    ry, rx = node_coords[tree.name]
+    stem_length = 0.2
+    ax.plot([rx + stem_length, rx], [ry,ry], color="#000")
+
+    for parent, child, _ in edges:
+        px, py = node_coords[parent]
+        cx, cy = node_coords[child]
+        ax.plot([py,py,cy], [px,cx,cx], color="#000")
+
+    for name, (x,y) in node_coords.items():
+        if name in leaf_nodes:
+            ax.text(
+                y - 0.5, x, name,
+                ha="right", va="center", fontsize=12
+            )
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.invert_xaxis()
+
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
+
+    return ax
 
 def _find_a_parent_to_node(tree: Node, node: Node) -> tuple:
     """Utility function for reroot_tree"""
@@ -308,54 +376,101 @@ def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
     raise NotImplementedError()
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+#     print('hi')
 
-    # distances = np.array(
-    #     [
-    #         [0, 14, 14, 12],
-    #         [0, 0, 16, 14],
-    #         [0, 0, 0, 6],
-    #         [0, 0, 0, 0],
-    #     ],
-    #     dtype=float,
-    # )
-    # distances = distances + distances.T
-    # distances = np.array(
-    #         [
-    #             [0, 1, 4, 4, 2],
-    #             [0, 0, 5, 5, 3],
-    #             [0, 0, 0, 4, 3],
-    #             [0, 0, 0, 0, 2],
-    #             [0, 0, 0, 0, 0],
-    #         ],
-    #         dtype=float,
-    #     )
-    # distances = distances + distances.T
-    # distances = np.array(
-    #         [
-    #             [0, 2, 2],
-    #             [0, 0, 0.5],
-    #             [0, 0, 0],
-    #         ],
-    #         dtype=float,
-    #     )
-    # distances = distances + distances.T
+#     # distances = np.array(
+#     #     [
+#     #         [0, 14, 14, 12],
+#     #         [0, 0, 16, 14],
+#     #         [0, 0, 0, 6],
+#     #         [0, 0, 0, 0],
+#     #     ],
+#     #     dtype=float,
+#     # )
+#     # distances = distances + distances.T
+#     # distances = np.array(
+#     #         [
+#     #             [0, 1, 4, 4, 2],
+#     #             [0, 0, 5, 5, 3],
+#     #             [0, 0, 0, 4, 3],
+#     #             [0, 0, 0, 0, 2],
+#     #             [0, 0, 0, 0, 0],
+#     #         ],
+#     #         dtype=float,
+#     #     )
+#     # distances = distances + distances.T
+#     # distances = np.array(
+#     #         [
+#     #             [0, 2, 2],
+#     #             [0, 0, 0.5],
+#     #             [0, 0, 0],
+#     #         ],
+#     #         dtype=float,
+#     #     )
+#     # distances = distances + distances.T
 
-    # neighbor_joining(distances, list("ABCD"))
-    # neighbor_joining(distances, list("ABCDE"))
-    # neighbor_joining(distances, ["AB","CD","E"])
+#     # neighbor_joining(distances, list("ABCD"))
+#     # neighbor_joining(distances, list("ABCDE"))
+#     # neighbor_joining(distances, ["AB","CD","E"])
 
-    distances = np.array(
-        [
-            [0, 5, 4, 9, 8],
-            [0, 0, 5, 10, 9],
-            [0, 0, 0, 7, 6],
-            [0, 0, 0, 0, 7],
-            [0, 0, 0, 0, 0],
-        ],
-        dtype=float,
-    )
-    distances = distances + distances.T
+#     # distances = np.array(
+#     #     [
+#     #         [0, 5, 4, 9, 8],
+#     #         [0, 0, 5, 10, 9],
+#     #         [0, 0, 0, 7, 6],
+#     #         [0, 0, 0, 0, 7],
+#     #         [0, 0, 0, 0, 0],
+#     #     ],
+#     #     dtype=float,
+#     # )
+#     # distances = distances + distances.T
 
-    result = neighbor_joining(distances, list("ABCDE"))
-    print(result.right.right.right_distance)
+#     # result = neighbor_joining(distances, list("ABCDE"))
+#     # print(result.right.right.right_distance)
+#     tree_1 = Node(
+#         "ROOT",
+#         left=Node(
+#             "X",
+#             left=Node(
+#                 "A",
+#                 left=None,
+#                 left_distance=0,
+#                 right=None,
+#                 right_distance=0,
+#             ),
+#             left_distance=6,
+#             right=Node(
+#                 "B",
+#                 left=None,
+#                 left_distance=0,
+#                 right=None,
+#                 right_distance=0,
+#             ),
+#             right_distance=8,
+#         ),
+#         left_distance=2,
+#         right=Node(
+#             "Y",
+#             left=Node(
+#                 "C",
+#                 left=None,
+#                 left_distance=0,
+#                 right=None,
+#                 right_distance=0,
+#             ),
+#             left_distance=4,
+#             right=Node(
+#                 "D",
+#                 left=None,
+#                 left_distance=0,
+#                 right=None,
+#                 right_distance=0,
+#             ),
+#             right_distance=2,
+#         ),
+#         right_distance=2,
+#     )
+
+#     plot_nj_tree(tree_1)
+#     plt.savefig('test.png')
