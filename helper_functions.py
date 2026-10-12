@@ -2,7 +2,7 @@
 from copy import deepcopy
 import numpy as np
 import matplotlib
-matplotlib.use('WebAgg')
+# matplotlib.use('WebAgg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.axes import Axes
@@ -218,28 +218,33 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             node_coords[node.name] = (curr_x, 0)
 
         curr_x, curr_y = node_coords[node.name]
+        mid_x = (x_left + x_right) / 2
 
         # left tree
         if node.left:
-            child_x = (x_left + curr_x) * 1/2
+            # child_x = (x_left + curr_x) * 1/2
+            child_x = (x_left + mid_x) * 1/2
             child_y = curr_y - node.left_distance
 
             node_coords[node.left.name] = (child_x, child_y)
             edges.append((node.name, node.left.name, node.left_distance))
 
-            recursive_plot_nj_tree(node.left, x_left, curr_x)
+            # recursive_plot_nj_tree(node.left, x_left, curr_x)
+            recursive_plot_nj_tree(node.left, x_left, mid_x)
 
         # right tree
         if node.right:
-            child_x = (x_right + curr_x) * 1/2
+            # child_x = (x_right + curr_x) * 1/2
+            child_x = (x_right + mid_x) * 1/2
             child_y = curr_y - node.right_distance
 
             node_coords[node.right.name] = (child_x, child_y)
             edges.append((node.name, node.right.name, node.right_distance))
 
-            recursive_plot_nj_tree(node.right, curr_x, x_right)
+            # recursive_plot_nj_tree(node.right, curr_x, x_right)
+            recursive_plot_nj_tree(node.right, mid_x, x_right)
 
-    recursive_plot_nj_tree(tree, -0.5, no_leaves)
+    recursive_plot_nj_tree(tree, 0, no_leaves)
 
     ry, rx = node_coords[tree.name]
     stem_length = 0.2
