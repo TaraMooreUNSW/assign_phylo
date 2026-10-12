@@ -192,24 +192,32 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     """
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(8,6))
+        _, ax = plt.subplots(figsize=(10,7))
 
     node_coords = {}
     edges = []
-    leaf_nodes = set()
+
+    def get_leaf_nodes(node: Node):
+        if node is None:
+            return []
+
+        if node.left is None and node.right is None:
+            return [node.name]
+
+        return get_leaf_nodes(node.left) + get_leaf_nodes(node.right)
+
+    leaf_nodes = get_leaf_nodes(tree)
+    no_leaves = len(leaf_nodes)
 
     def recursive_plot_nj_tree(node: Node, x_left, x_right):
         if node is None:
             return
 
         if node == tree:
-            curr_x = abs(1/2 * (x_left + x_right))
+            curr_x = (x_left + x_right) * 1/2
             node_coords[node.name] = (curr_x, 0)
 
         curr_x, curr_y = node_coords[node.name]
-
-        if node.left is None and node.right is None:
-            leaf_nodes.add(node.name)
 
         # left tree
         if node.left:
@@ -231,7 +239,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
             recursive_plot_nj_tree(node.right, curr_x, x_right)
 
-    recursive_plot_nj_tree(tree, 0, 5)
+    recursive_plot_nj_tree(tree, -0.5, no_leaves)
 
     ry, rx = node_coords[tree.name]
     stem_length = 0.2
@@ -245,7 +253,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     for name, (x,y) in node_coords.items():
         if name in leaf_nodes:
             ax.text(
-                y - 0.5, x, name,
+                y - 0.6, x, name,
                 ha="right", va="center", fontsize=12
             )
 
@@ -256,6 +264,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
 
     return ax
+
 
 def _find_a_parent_to_node(tree: Node, node: Node) -> tuple:
     """Utility function for reroot_tree"""
