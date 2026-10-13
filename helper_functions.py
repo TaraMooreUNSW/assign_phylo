@@ -214,38 +214,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     no_leaves = len(leaf_nodes)
 
     if ax is None:
-        # _, ax = plt.subplots(figsize=(10,max(7, no_leaves * 0.4)))
         _, ax = plt.subplots(figsize=(10,7))
-
-    # def recursive_plot_nj_tree(node: Node, x_left, x_right):
-    #     if node is None:
-    #         return
-
-    #     if node == tree:
-    #         curr_x = (x_left + x_right) / 2
-    #         node_coords[node.name] = (curr_x, 0)
-
-    #     curr_x, curr_y = node_coords[node.name]
-
-    #     # left tree
-    #     if node.left:
-    #         child_x = (x_left + curr_x) / 2
-    #         child_y = curr_y - node.left_distance
-
-    #         node_coords[node.left.name] = (child_x, child_y)
-    #         edges.append((node.name, node.left.name, node.left_distance))
-
-    #         recursive_plot_nj_tree(node.left, x_left, curr_x)
-
-    #     # right tree
-    #     if node.right:
-    #         child_x = (x_right + curr_x) / 2
-    #         child_y = curr_y - node.right_distance
-
-    #         node_coords[node.right.name] = (child_x, child_y)
-    #         edges.append((node.name, node.right.name, node.right_distance))
-
-    #         recursive_plot_nj_tree(node.right, curr_x, x_right)
 
     def recursive_plot_nj_tree(node: Node, x_left, x_right):
         if node is None:
@@ -270,7 +239,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             left_sub_leaves = count_leaf_nodes(node.left.left)
             right_sub_leaves = count_leaf_nodes(node.left.right)
             total_sub_leaves = left_sub_leaves + right_sub_leaves
-            
+
             if total_sub_leaves > 0:
                 child_x = x_left + (curr_x - x_left) * (left_sub_leaves / total_sub_leaves)
             else:
@@ -287,7 +256,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             left_sub_leaves = count_leaf_nodes(node.right.left)
             right_sub_leaves = count_leaf_nodes(node.right.right)
             total_sub_leaves = left_sub_leaves + right_sub_leaves
-            
+
             if total_sub_leaves > 0:
                 child_x = curr_x + (x_right - curr_x) * (left_sub_leaves / total_sub_leaves)
             else:
@@ -307,7 +276,6 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
         cx, cy = node_coords[child]
         ax.plot([py,py,cy], [px,cx,cx], color="#000")
 
-
     for name, (x,y) in node_coords.items():
         if name in leaf_nodes:
             ax.text(
@@ -318,19 +286,11 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     all_x_coords = [coords[0] for coords in node_coords.values()]
     min_x, max_x = min(all_x_coords), max(all_x_coords)
     canvas_width = max_x - min_x
-    print(canvas_width)
 
     stem_length = 0.05 * canvas_width
-
     ry, rx = node_coords[tree.name]
-    ax.plot([rx + stem_length, rx], [ry,ry], color="red")
+    ax.plot([rx + stem_length, rx], [ry,ry], color="#000")
 
-    curr_x_lim = ax.get_xlim()
-
-    new_x_min = min(curr_x_lim[0], rx, rx + stem_length) - (canvas_width * 0.02)
-    new_x_max = max(curr_x_lim[1], rx, rx + stem_length) - (canvas_width * 0.02)
-
-    ax.set_xlim(new_x_min, new_x_max)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
