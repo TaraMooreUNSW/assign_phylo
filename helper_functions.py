@@ -391,7 +391,19 @@ def sort_children_by_leaves(tree: Node) -> None:
         The root node of the tree.
 
     """
-    raise NotImplementedError()
+    if tree is None:
+        return 0
+
+    if tree.left is None and tree.right is None:
+        return 1
+
+    left_leaves = sort_children_by_leaves(tree.left)
+    right_leaves = sort_children_by_leaves(tree.right)
+
+    if left_leaves > right_leaves:
+        tree.left, tree.right = tree.right, tree.left
+
+    return left_leaves + right_leaves
 
 
 def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
