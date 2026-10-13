@@ -298,6 +298,8 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
 
+    plt.tight_layout(pad=0.2)
+
     return ax
 
 
