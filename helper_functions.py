@@ -8,6 +8,21 @@ import matplotlib.ticker as ticker
 from matplotlib.axes import Axes
 
 
+CORONAVIRUS_MAJOR_GROUPS = [
+    "Alphacoronavirus",
+    "Betacoronavirus",
+    "Gammacoronavirus",
+    "Deltacoronavirus"
+]
+
+C_GROUP_TO_COLOUR_MAP = {
+    "Alphacoronavirus": "red",
+    "Betacoronavirus": "blue",
+    "Gammacoronavirus": "purple",
+    "Deltacoronavirus": "green",
+    None: "#000",
+}
+
 class Node:
     def __init__(
         self,
@@ -16,6 +31,7 @@ class Node:
         left_distance: float,
         right: "Node",
         right_distance: float,
+        taxonomy: str = None,
         confidence: float = None,
     ):
         """A node in a binary tree produced by neighbor joining algorithm.
@@ -32,6 +48,8 @@ class Node:
             Right child.
         right_distance: float
             The distance to the right child.
+        taxonomy: str
+            The matched major group of coronavirus
         confidence: float
             The confidence level of the split determined by the bootstrap method.
             Only used if you implement Bonus Problem 1.
@@ -49,6 +67,7 @@ class Node:
         self.left_distance = left_distance
         self.right = right
         self.right_distance = right_distance
+        self.taxonomy = taxonomy
         self.confidence = confidence
 
 
@@ -167,6 +186,7 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
 
 
 
+# def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     """A function for plotting neighbor joining phylogeny dendrogram.
 
@@ -263,7 +283,6 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
                 child_x = (curr_x + x_right) / 2
 
             child_y = curr_y - node.right_distance
-
             node_coords[node.right.name] = (child_x, child_y)
             edges.append((node.name, node.right.name, node.right_distance))
 
@@ -271,16 +290,35 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     recursive_plot_nj_tree(tree, 0, no_leaves)
 
+    name_to_node = {}
+    def map_name_to_node(node: Node):
+        if node:
+            name_to_node[node.name] = node
+            map_name_to_node(node.left)
+            map_name_to_node(node.right)
+
+    map_name_to_node(tree)
+
     for parent, child, _ in edges:
         px, py = node_coords[parent]
         cx, cy = node_coords[child]
-        ax.plot([py,py,cy], [px,cx,cx], color="#000")
+
+        curr_node = name_to_node.get(child)
+        node_taxa = curr_node.taxonomy
+        label_colour = C_GROUP_TO_COLOUR_MAP.get(node_taxa, "#000")
+        ax.plot([py,py,cy], [px,cx,cx], color=label_colour)
+
 
     for name, (x,y) in node_coords.items():
         if name in leaf_nodes:
+            curr_node = name_to_node.get(name)
+            node_taxa = curr_node.taxonomy
+            label_colour = C_GROUP_TO_COLOUR_MAP.get(node_taxa, "#000")
+
             ax.text(
                 y, x, f"  {name}",
-                va="center", fontsize=12
+                va="center", fontsize=12,
+                color=label_colour
             )
 
     all_x_coords = [coords[0] for coords in node_coords.values()]
@@ -299,7 +337,6 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
 
     plt.tight_layout(pad=0.2)
-
     return ax
 
 
