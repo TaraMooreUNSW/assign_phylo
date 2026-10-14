@@ -304,10 +304,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
         px, py = node_coords[parent]
         cx, cy = node_coords[child]
 
-        curr_node = name_to_node.get(child)
-        node_taxa = curr_node.taxonomy
-        label_colour = C_GROUP_TO_COLOUR_MAP.get(node_taxa, "#000")
-        ax.plot([py,py,cy], [px,cx,cx], color=label_colour)
+        ax.plot([py,py,cy], [px,cx,cx], color="#000")
 
 
     for name, (x,y) in node_coords.items():
