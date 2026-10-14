@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib
 # matplotlib.use('WebAgg')
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib.patches as mpatches
+from matplotlib import ticker
 from matplotlib.axes import Axes
 
 
@@ -234,7 +235,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     no_leaves = len(leaf_nodes)
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(10,7))
+        fig, ax = plt.subplots(figsize=(10,7))
 
     def recursive_plot_nj_tree(node: Node, x_left, x_right):
         if node is None:
@@ -329,6 +330,9 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     ry, rx = node_coords[tree.name]
     ax.plot([rx + stem_length, rx], [ry,ry], color="#000")
 
+    # add colour legend
+    legend_handles = [mpatches.Patch(color=colour, label=label if label else "Not a coronvirus") for label, colour in C_GROUP_TO_COLOUR_MAP.items()]
+    ax.legend(handles=legend_handles, title="Coronavirus Taxonomies", loc="center right", bbox_to_anchor=(1.70, 0.5), borderaxespad=0)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -336,6 +340,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
 
+    fig.subplots_adjust(right=0.75)
     plt.tight_layout(pad=0.2)
     return ax
 
