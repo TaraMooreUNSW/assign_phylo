@@ -1,13 +1,14 @@
 """Helper functions for HW3"""
 from copy import deepcopy
 import numpy as np
-import matplotlib
-# matplotlib.use('WebAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib import ticker
 from matplotlib.axes import Axes
+from Bio import Align
+from Bio.Align import substitution_matrices
 
+GAP_PENALTY = 8
 
 CORONAVIRUS_MAJOR_GROUPS = [
     "Alphacoronavirus",
@@ -472,102 +473,141 @@ def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
     """
     raise NotImplementedError()
 
+# Global alignment function from ass1 pt 1
 
-# if __name__ == "__main__":
-#     print('hi')
+def global_alignment(seq1, seq2, scoring_function):
+    """Global sequence alignment using the Needleman–Wunsch algorithm.
 
-#     # distances = np.array(
-#     #     [
-#     #         [0, 14, 14, 12],
-#     #         [0, 0, 16, 14],
-#     #         [0, 0, 0, 6],
-#     #         [0, 0, 0, 0],
-#     #     ],
-#     #     dtype=float,
-#     # )
-#     # distances = distances + distances.T
-#     # distances = np.array(
-#     #         [
-#     #             [0, 1, 4, 4, 2],
-#     #             [0, 0, 5, 5, 3],
-#     #             [0, 0, 0, 4, 3],
-#     #             [0, 0, 0, 0, 2],
-#     #             [0, 0, 0, 0, 0],
-#     #         ],
-#     #         dtype=float,
-#     #     )
-#     # distances = distances + distances.T
-#     # distances = np.array(
-#     #         [
-#     #             [0, 2, 2],
-#     #             [0, 0, 0.5],
-#     #             [0, 0, 0],
-#     #         ],
-#     #         dtype=float,
-#     #     )
-#     # distances = distances + distances.T
+    Indels should be denoted with the "-" character.
 
-#     # neighbor_joining(distances, list("ABCD"))
-#     # neighbor_joining(distances, list("ABCDE"))
-#     # neighbor_joining(distances, ["AB","CD","E"])
+    Parameters
+    ----------
+    seq1: str
+        First sequence to be aligned.
+    seq2: str
+        Second sequence to be aligned.
+    scoring_function: Callable
 
-#     # distances = np.array(
-#     #     [
-#     #         [0, 5, 4, 9, 8],
-#     #         [0, 0, 5, 10, 9],
-#     #         [0, 0, 0, 7, 6],
-#     #         [0, 0, 0, 0, 7],
-#     #         [0, 0, 0, 0, 0],
-#     #     ],
-#     #     dtype=float,
-#     # )
-#     # distances = distances + distances.T
+    Returns
+    -------
+    str
+        First aligned sequence.
+    str
+        Second aligned sequence.
+    float
+        Final score of the alignment.
 
-#     # result = neighbor_joining(distances, list("ABCDE"))
-#     # print(result.right.right.right_distance)
-#     tree_1 = Node(
-#         "ROOT",
-#         left=Node(
-#             "X",
-#             left=Node(
-#                 "A",
-#                 left=None,
-#                 left_distance=0,
-#                 right=None,
-#                 right_distance=0,
-#             ),
-#             left_distance=6,
-#             right=Node(
-#                 "B",
-#                 left=None,
-#                 left_distance=0,
-#                 right=None,
-#                 right_distance=0,
-#             ),
-#             right_distance=8,
-#         ),
-#         left_distance=2,
-#         right=Node(
-#             "Y",
-#             left=Node(
-#                 "C",
-#                 left=None,
-#                 left_distance=0,
-#                 right=None,
-#                 right_distance=0,
-#             ),
-#             left_distance=4,
-#             right=Node(
-#                 "D",
-#                 left=None,
-#                 left_distance=0,
-#                 right=None,
-#                 right_distance=0,
-#             ),
-#             right_distance=2,
-#         ),
-#         right_distance=2,
-#     )
+    Examples
+    --------
+    >>> global_alignment("abracadabra", "dabarakadara", lambda x, y: [-1, 1][x == y])
+    ('-ab-racadabra', 'dabarakada-ra', 5.0)
 
-#     plot_nj_tree(tree_1)
-#     plt.savefig('test.png')
+    Other alignments are not possible.
+
+    """
+    rows = len(seq2) + 1
+    cols = len(seq1) + 1
+
+    # cache scoring function to improve efficiency
+    uniq_seq1 = set(seq1)
+    uniq_seq2 = set(seq2)
+    store_cache = {
+        (aa_i, aa_j): scoring_function(aa_i, aa_j)
+        for aa_i in uniq_seq1
+        for aa_j in uniq_seq2
+    }
+
+    # initialise matrix
+    alignment_matrix = [[{} for _ in range(cols)] for _ in range(rows)]
+    alignment_matrix[0][0] = 0
+
+    # set matrix initial row
+    for i in range(rows):
+        alignment_matrix[i][0] = {"score": -i*GAP_PENALTY,
+                                  "prev_cell_row": i - 1,
+                                  "prev_cell_col": 0}
+
+    # set matrix initial col
+    for j in range(cols):
+        alignment_matrix[0][j] = {"score": -j*GAP_PENALTY,
+                                  "prev_cell_row": 0,
+                                  "prev_cell_col": j - 1}
+
+    # recurrence
+    for i in range(1, rows):
+        for j in range(1, cols):
+            recurr_one = alignment_matrix[i-1][j-1]["score"] + store_cache[(seq1[j-1], seq2[i-1])]
+            recurr_two = alignment_matrix[i-1][j]["score"] - GAP_PENALTY
+            recurr_three = alignment_matrix[i][j-1]["score"] - GAP_PENALTY
+
+            scores = [recurr_one, recurr_two, recurr_three]
+            max_score = max(scores)
+            max_score_index = scores.index(max_score)
+
+            alignment_matrix[i][j]["score"] = max_score
+
+            # traceback recording
+            if max_score_index == 0:
+                alignment_matrix[i][j]["prev_cell_row"] = i - 1
+                alignment_matrix[i][j]["prev_cell_col"] = j - 1
+            elif max_score_index == 1:
+                alignment_matrix[i][j]["prev_cell_row"] = i - 1
+                alignment_matrix[i][j]["prev_cell_col"] = j
+            elif max_score_index == 2:
+                alignment_matrix[i][j]["prev_cell_row"] = i
+                alignment_matrix[i][j]["prev_cell_col"] = j - 1
+
+    # Traceback from bottom right
+    seq1_aligned = list(seq1)
+    seq2_aligned = list(seq2)
+    score = alignment_matrix[rows - 1][cols - 1]["score"]
+
+    t_i = len(seq2)
+    t_j = len(seq1)
+    while t_i > 0 or t_j > 0:
+        i_backpoint = alignment_matrix[t_i][t_j]["prev_cell_row"]
+        j_backpoint = alignment_matrix[t_i][t_j]["prev_cell_col"]
+
+        if i_backpoint == t_i:
+            t_j = j_backpoint           # gap in seq2
+            seq2_aligned.insert(t_i, '-')
+        elif j_backpoint == t_j:
+            t_i = i_backpoint           # gap in seq1
+            seq1_aligned.insert(t_j, '-')
+        else:
+            t_i = i_backpoint
+            t_j = j_backpoint
+
+    seq1_final = "".join(seq1_aligned)
+    seq2_final = "".join(seq2_aligned)
+
+    return(seq1_final, seq2_final, f"{score:.1f}")
+
+
+def scoring_blosum62(aa_i, aa_j):
+    """
+    Scoring function using the BLOSUM62 substitution matrix
+
+    Parameters
+    ----------
+    aa_i: str
+        First amino acid.
+    aa_j: str
+        Second amino acid.
+
+    Returns
+    -------
+    float
+        Score of match between amino acids.
+
+    Examples
+    --------
+    >>> scoring_BLOSUM('W', 'W')
+    (11.0)
+    """
+    aligner = Align.PairwiseAligner()
+    blosum_matrix = substitution_matrices.load("BLOSUM62")
+    aligner.substitution_matrix = blosum_matrix
+
+    score = aligner.score(aa_i, aa_j)
+    return score
