@@ -473,7 +473,6 @@ def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
     raise NotImplementedError()
 
 # Global alignment function from ass1 pt 1
-
 def global_alignment(seq1, seq2, scoring_function):
     """Global sequence alignment using the Needleman–Wunsch algorithm.
 
