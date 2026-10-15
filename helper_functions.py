@@ -188,7 +188,6 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
 
 
 
-# def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     """A function for plotting neighbor joining phylogeny dendrogram.
 
