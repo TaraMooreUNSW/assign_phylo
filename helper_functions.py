@@ -211,7 +211,6 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     >>> fig.savefig("example.png")
 
     """
-
     node_coords = {}
     edges = []
 
@@ -237,6 +236,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     if ax is None:
         fig, ax = plt.subplots(figsize=(10,7))
 
+    # calculate x and y coords between nodes in tree
     def recursive_plot_nj_tree(node: Node, x_left, x_right):
         if node is None:
             return
@@ -246,6 +246,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             right_leaves = count_leaf_nodes(node.right)
             total_leaves = left_leaves + right_leaves
 
+            # set distance between two lines so they don't overlap
             if total_leaves > 0:
                 curr_x = x_left + (x_right - x_left) * (left_leaves/total_leaves)
             else:
@@ -261,6 +262,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             right_sub_leaves = count_leaf_nodes(node.left.right)
             total_sub_leaves = left_sub_leaves + right_sub_leaves
 
+            # set distance between two lines so they don't overlap
             if total_sub_leaves > 0:
                 child_x = x_left + (curr_x - x_left) * (left_sub_leaves / total_sub_leaves)
             else:
@@ -278,6 +280,7 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
             right_sub_leaves = count_leaf_nodes(node.right.right)
             total_sub_leaves = left_sub_leaves + right_sub_leaves
 
+            # set distance between two lines so they don't overlap
             if total_sub_leaves > 0:
                 child_x = curr_x + (x_right - curr_x) * (left_sub_leaves / total_sub_leaves)
             else:
@@ -300,13 +303,16 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     map_name_to_node(tree)
 
+    # draw the connection between parent nodes and children nodes
+    # x and y flipped to correctly orient dendrogram
     for parent, child, _ in edges:
         px, py = node_coords[parent]
         cx, cy = node_coords[child]
 
         ax.plot([py,py,cy], [px,cx,cx], color="#000")
 
-
+    # label all leaf nodes & add corresponding colour based on taxonomy (if set)
+    # x and y flipped to correctly orient dendrogram
     for name, (x,y) in node_coords.items():
         if name in leaf_nodes:
             curr_node = name_to_node.get(name)
@@ -319,10 +325,12 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
                 color=label_colour
             )
 
+    # calculate length to make root stem
     all_x_coords = [coords[0] for coords in node_coords.values()]
     min_x, max_x = min(all_x_coords), max(all_x_coords)
     canvas_width = max_x - min_x
 
+    # add root stem
     stem_length = 0.05 * canvas_width
     ry, rx = node_coords[tree.name]
     ax.plot([rx + stem_length, rx], [ry,ry], color="#000")
@@ -333,10 +341,11 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.invert_xaxis()
+    ax.invert_xaxis() # make x-axis go from left to right
 
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f"{int(abs(x))}"))
 
+    # ensure colour legend does not cover tree
     fig.subplots_adjust(right=0.75)
     plt.tight_layout(pad=0.2)
     return ax
@@ -441,6 +450,7 @@ def sort_children_by_leaves(tree: Node) -> None:
     left_leaves = sort_children_by_leaves(tree.left)
     right_leaves = sort_children_by_leaves(tree.right)
 
+    # set left tree to have the fewer child nodes
     if left_leaves > right_leaves:
         tree.left, tree.right = tree.right, tree.left
 
